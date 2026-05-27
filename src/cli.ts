@@ -9,6 +9,7 @@ interface CliOptions {
   json: boolean;
   all: boolean;
   debug: boolean;
+  noLlm: boolean;
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -19,23 +20,39 @@ async function main(argv: string[]): Promise<number> {
     .argument("[path]", "Path to the project folder", ".")
     .option("--json", "Output found-map.json to stdout instead of human text", false)
     .option("--all", "Show every item without listing caps", false)
-    .option("--debug", "Show underlying stack traces beneath friendly errors", false);
+    .option("--debug", "Show underlying stack traces beneath friendly errors", false)
+    .option(
+      "--no-llm",
+      "Skip the LLM enrichment step and use deterministic labels only",
+      false,
+    );
 
   program.parse(argv, { from: "user" });
   const opts = program.opts<CliOptions>();
   const targetPath = (program.args[0] as string | undefined) ?? ".";
 
+  const apiKey =
+    process.env["FOUND_ANTHROPIC_KEY"] ?? process.env["ANTHROPIC_API_KEY"] ?? "";
+  const useLLM = opts.noLlm ? false : !!apiKey;
+
   try {
-    const { humanText, json } = await run({
+    const result = await run({
       rootDir: targetPath,
       showAll: opts.all,
       terminalWidth: process.stdout.columns ?? 80,
+      useLLM,
+      apiKey,
     });
 
     if (opts.json) {
-      process.stdout.write(json + "\n");
+      process.stdout.write(result.json + "\n");
     } else {
-      process.stdout.write(humanText + "\n");
+      process.stdout.write(result.humanText + "\n");
+      if (!useLLM && !opts.noLlm) {
+        process.stdout.write(
+          "\nTip: set FOUND_ANTHROPIC_KEY for richer, plain-English labels. (Use --no-llm to silence this.)\n",
+        );
+      }
     }
     return 0;
   } catch (err) {

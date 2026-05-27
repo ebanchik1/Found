@@ -97,12 +97,39 @@ The labels use a deliberate hedging style. When Found is confident, it states th
 
 ---
 
+## Richer labels (optional)
+
+By default Found ships with deterministic labels — accurate but flat ("A screen at /Input. Probably where people interact with input."). Setting an Anthropic API key turns those into real descriptions ("Where users enter the credit cards they have and how much they spend in each category.").
+
+**Setup:**
+
+1. Get an API key at https://console.anthropic.com/settings/keys
+2. Export it in your shell:
+   ```bash
+   export FOUND_ANTHROPIC_KEY=sk-ant-...
+   ```
+3. Run Found as usual:
+   ```bash
+   npx @ebanchik/found .
+   ```
+
+**What gets sent to the model:** file paths, what each file exports (names only), import edges, route info, and the kind hint Found computed deterministically. **Your source code never leaves your machine.** Cost per run is fractions of a cent on a small (Haiku-class) model.
+
+**Skip the LLM step anytime:**
+
+```bash
+found . --no-llm   # use deterministic labels even when a key is set
+```
+
+If the LLM call fails (network down, wrong key, malformed response), Found silently falls back to deterministic labels and prints a warning to stderr.
+
 ## Flags
 
 ```bash
 found . --all      # Show every item, no listing cap (default cap is 20 per section)
 found . --json     # Output found-map.json to stdout instead of human text
 found . --debug    # Show stack traces beneath friendly errors (for bug reports)
+found . --no-llm   # Skip the LLM enrichment, use deterministic labels only
 ```
 
 ---
@@ -138,13 +165,14 @@ This is the LLM-less version of Found. It maps files using filename + directory 
 
 - Scans your project read-only (never modifies files)
 - Tells you what's there in plain English
-- Stays local — your code never leaves your machine (no network calls in v0.1)
+- Stays local by default — no network calls unless you opt into LLM-enriched labels via `FOUND_ANTHROPIC_KEY`
+- When the LLM step is enabled: sends only parsed structure (paths, exports, import edges), never your source code
 
 **Doesn't:**
 
 - Touch your code
 - Suggest changes
-- Send anything anywhere
+- Send your raw source anywhere (even with the LLM step enabled)
 - Replace reading the actual source. It's a map, not an explanation.
 
 ---

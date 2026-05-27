@@ -24,6 +24,19 @@ found .
 
 Requires Node.js 18 or newer. First-time user? Read [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md) for a full walkthrough — prerequisites, what the output sections mean, common situations, and flags.
 
+### Richer labels (optional)
+
+Set an Anthropic API key and Found uses a single cheap model call to turn flat templates into real descriptions:
+
+```bash
+export FOUND_ANTHROPIC_KEY=sk-ant-...
+npx @ebanchik/found .
+```
+
+What changes: `"A screen at /Input. Probably where people interact with input."` becomes `"Where users enter the credit cards they have and how much they spend in each category."` The model receives the parsed structure only — paths, exports, import edges — **never your source code**. Cost is fractions of a cent per run.
+
+Skip the LLM step anytime with `--no-llm`.
+
 ## What it does
 
 Point it at a project folder. It prints a map like:
@@ -52,6 +65,7 @@ That's the whole product.
 | `--json` | Output `found-map.json` to stdout instead of human text |
 | `--all` | Show every item without the 20-per-section listing cap |
 | `--debug` | Show underlying stack traces beneath friendly errors |
+| `--no-llm` | Skip the LLM enrichment step; use the deterministic labels only |
 
 ## Scope
 
@@ -81,7 +95,7 @@ For someone who's lost, an honest hedge beats a confident wrong answer every tim
 
 - No telemetry. No analytics. No phone-home.
 - v0.1 is fully local — your code never leaves your machine.
-- v0.2a will add optional LLM-enriched labels via a single batched call. Even then, the LLM sees the **parsed structure** (paths, exports, import edges) — never your raw source. API key is opt-in via env var. No key, no LLM call.
+- v0.2a (shipped — see "Richer labels" above) adds optional LLM-enriched labels via a single batched cheap-model call. The LLM sees the **parsed structure** (paths, exports, import edges) — never your raw source. API key is opt-in via `FOUND_ANTHROPIC_KEY`. No key, no LLM call. Skip anytime with `--no-llm`.
 
 ## Schema reference
 
@@ -128,12 +142,12 @@ Found writes `found-map.json` (with `--json`) following this shape:
 | `nodes[].userFacing` | boolean | Whether the user sees it directly. |
 | `edges[]` | array | Dependency graph. `from` imports `to`. |
 
-The schema is additive between minor versions. v0.2a will add LLM-enriched `does` and model-emitted `confidence` without breaking v0.1 consumers.
+The schema is additive between minor versions. v0.2a adds `confidenceSource: "model"` and model-emitted float `confidence` values without breaking v0.1 consumers.
 
 ## Roadmap
 
-- **v0.1** — Static map. Deterministic only. This is what's here.
-- **v0.2a** — Add LLM-enriched labels via a single batched cheap-model call. `confidenceSource: "model"`.
+- **v0.1** — Static map. Deterministic labels. Shipped.
+- **v0.2a** — Optional LLM-enriched labels via a single batched cheap-model call. `confidenceSource: "model"`. **Shipped.**
 - **v0.2b** — `--change "..."` for blast-radius queries: "I want to change the login flow → touch these files, avoid these, likely symptom if it breaks."
 - **Beyond** — watch mode, "what just happened" diff narration, explain-on-demand. Not promised, listed for orientation.
 

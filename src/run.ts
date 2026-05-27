@@ -2,19 +2,24 @@ import { scan } from "./scan.js";
 import { buildGraph } from "./graph.js";
 import { detectRoutes } from "./routes.js";
 import { ConventionDescriber } from "./describer.js";
+import { LLMDescriber } from "./llm-describer.js";
 import { buildFoundMap, renderJson } from "./renderJson.js";
 import { renderText, renderConfigSummary } from "./renderText.js";
-import type { RouteInfo, ScannedNode } from "./types.js";
+import type { Describer, RouteInfo, ScannedNode } from "./types.js";
 
 export interface RunOptions {
   rootDir: string;
   showAll: boolean;
   terminalWidth: number;
+  useLLM?: boolean;
+  apiKey?: string;
+  model?: string;
 }
 
 export interface RunResult {
   humanText: string;
   json: string;
+  describerUsed: "convention" | "model";
 }
 
 export async function run(opts: RunOptions): Promise<RunResult> {
@@ -47,8 +52,19 @@ export async function run(opts: RunOptions): Promise<RunResult> {
     return n;
   });
 
-  const describer = new ConventionDescriber();
+  const wantsLLM = opts.useLLM !== false && !!opts.apiKey;
+  const describer: Describer = wantsLLM
+    ? new LLMDescriber({
+        apiKey: opts.apiKey!,
+        rootDir: scanResult.rootDir,
+        ...(opts.model ? { model: opts.model } : {}),
+      })
+    : new ConventionDescriber();
   const described = await describer.describe(promotedNodes, graph, routes);
+  const describerUsed: "convention" | "model" =
+    wantsLLM && described.some((d) => d.confidenceSource === "model")
+      ? "model"
+      : "convention";
 
   const map = buildFoundMap(
     { nodes: described, edges: graph.edges },
@@ -70,7 +86,7 @@ export async function run(opts: RunOptions): Promise<RunResult> {
 
   const json = renderJson(map);
 
-  return { humanText, json };
+  return { humanText, json, describerUsed };
 }
 
 const APP_ENTRYPOINT_RX = /^(src\/)?App\.(t|j)sx?$/;
