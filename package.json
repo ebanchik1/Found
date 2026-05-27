@@ -30,8 +30,16 @@
     "cli",
     "ai-built"
   ],
-  "author": "",
+  "author": "Eli Banchik",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ebanchik1/Found.git"
+  },
+  "homepage": "https://github.com/ebanchik1/Found#readme",
+  "bugs": {
+    "url": "https://github.com/ebanchik1/Found/issues"
+  },
   "dependencies": {
     "@babel/parser": "^7.26.0",
     "commander": "^12.1.0",
