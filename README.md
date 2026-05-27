@@ -11,14 +11,14 @@ Open-source, MIT, contributions welcome. Focused tool, not a platform. See [Scop
 No install required:
 
 ```bash
-npx found-map .
+npx @ebanchik/found .
 ```
 
 Or install globally:
 
 ```bash
-npm install -g found-map
-found-map .
+npm install -g @ebanchik/found
+found .
 ```
 
 ## What it does
