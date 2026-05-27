@@ -1,0 +1,21 @@
+{
+  "description": "Vite + React Router declarative routes with components and helpers",
+  "expectedSummary": { "screens": 3, "components": 1, "helpers": 1 },
+  "labels": [
+    {
+      "path": "src/App.tsx",
+      "expectedKind": "entrypoint",
+      "namePattern": "starting point"
+    },
+    {
+      "path": "src/components/Button.tsx",
+      "expectedKind": "component",
+      "namePattern": "Button"
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "expectedKind": "helper",
+      "namePattern": "auth"
+    }
+  ]
+}

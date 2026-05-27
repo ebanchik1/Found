@@ -1,0 +1,12 @@
+{
+  "description": "Exactly 1 screen — verifies singular pluralization in the opener",
+  "expectedSummary": { "screens": 1 },
+  "expectedOpenerSubstrings": ["1 screen", "That's all of it"],
+  "labels": [
+    {
+      "path": "app/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "home"
+    }
+  ]
+}

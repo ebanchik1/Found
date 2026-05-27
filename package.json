@@ -1,0 +1,52 @@
+{
+  "name": "found-map",
+  "version": "0.1.0-pre",
+  "description": "A plain-language map for vibe-coded apps. Tells you what you have, in English.",
+  "type": "module",
+  "bin": {
+    "found": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "eval": "tsx src/eval/runner.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "vibe-coding",
+    "code-map",
+    "codebase",
+    "plain-language",
+    "cli",
+    "ai-built"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.26.0",
+    "commander": "^12.1.0",
+    "dependency-cruiser": "^16.10.0",
+    "globby": "^14.0.2",
+    "ignore": "^6.0.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

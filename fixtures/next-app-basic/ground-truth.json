@@ -1,0 +1,36 @@
+{
+  "description": "Basic Next.js app router fixture: 3 static screens + 2 helpers",
+  "expectedSummary": { "screens": 3, "helpers": 2 },
+  "labels": [
+    {
+      "path": "app/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "home",
+      "acceptableHedge": ["land", "open the app"]
+    },
+    {
+      "path": "app/login/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "login",
+      "acceptableHedge": ["sign in"]
+    },
+    {
+      "path": "app/dashboard/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "dashboard",
+      "acceptableHedge": ["land after signing in"]
+    },
+    {
+      "path": "src/lib/db.ts",
+      "expectedKind": "helper",
+      "namePattern": "db",
+      "acceptableHedge": ["closer look", "used by"]
+    },
+    {
+      "path": "src/lib/email.ts",
+      "expectedKind": "helper",
+      "namePattern": "email",
+      "acceptableHedge": ["closer look", "used by"]
+    }
+  ]
+}

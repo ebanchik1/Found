@@ -1,0 +1,27 @@
+{
+  "description": "Next.js app router with dynamic and catch-all routes",
+  "expectedSummary": { "screens": 4 },
+  "labels": [
+    {
+      "path": "app/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "home"
+    },
+    {
+      "path": "app/users/[id]/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "user details",
+      "acceptableHedge": ["see a single user"]
+    },
+    {
+      "path": "app/users/[id]/edit/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "edit user"
+    },
+    {
+      "path": "app/blog/[...slug]/page.tsx",
+      "expectedKind": "screen",
+      "namePattern": "blog post"
+    }
+  ]
+}
