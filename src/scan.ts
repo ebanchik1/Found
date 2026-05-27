@@ -19,6 +19,11 @@ const ALWAYS_IGNORE = [
   ".git/**",
   ".idea/**",
   ".vscode/**",
+  "fixtures/**",
+  "__fixtures__/**",
+  "__mocks__/**",
+  "examples/**",
+  "example/**",
 ];
 
 const CONFIG_PATTERNS = [
@@ -38,6 +43,20 @@ export interface ScanResult {
   configCount: number;
 }
 
+const MONOREPO_SCAN_SKIP_DIRS = new Set([
+  "node_modules",
+  "fixtures",
+  "__fixtures__",
+  "__mocks__",
+  "examples",
+  "example",
+]);
+
+function shouldSkipForMonorepoScan(name: string): boolean {
+  if (name.startsWith(".")) return true;
+  return MONOREPO_SCAN_SKIP_DIRS.has(name);
+}
+
 function findPackageJsonFiles(rootDir: string): string[] {
   const found: string[] = [];
 
@@ -50,7 +69,7 @@ function findPackageJsonFiles(rootDir: string): string[] {
       return;
     }
     for (const entry of entries) {
-      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      if (shouldSkipForMonorepoScan(entry.name)) continue;
       const full = path.join(dir, entry.name);
       if (entry.isFile() && entry.name === "package.json") {
         found.push(full);
@@ -64,7 +83,7 @@ function findPackageJsonFiles(rootDir: string): string[] {
     found.push(path.join(rootDir, "package.json"));
   }
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    if (shouldSkipForMonorepoScan(entry.name)) continue;
     const full = path.join(rootDir, entry.name);
     if (entry.isDirectory()) walk(full, 1);
   }

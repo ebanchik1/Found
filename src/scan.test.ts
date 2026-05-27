@@ -47,6 +47,20 @@ describe("scan", () => {
     await expect(scan(tmpDir)).rejects.toBeInstanceOf(MonorepoDetected);
   });
 
+  it("does NOT trigger monorepo detection on fixtures/, __fixtures__/, __mocks__/, examples/", async () => {
+    writeFile(tmpDir, "package.json", "{}");
+    writeFile(tmpDir, "app/page.tsx", "export default function Page() { return null; }");
+    writeFile(tmpDir, "fixtures/sample/package.json", "{}");
+    writeFile(tmpDir, "fixtures/sample/index.ts", "// fixture");
+    writeFile(tmpDir, "__fixtures__/other/package.json", "{}");
+    writeFile(tmpDir, "__mocks__/mod/package.json", "{}");
+    writeFile(tmpDir, "examples/demo/package.json", "{}");
+
+    const result = await scan(tmpDir);
+    expect(result.nodes.length).toBeGreaterThan(0);
+    expect(result.nodes.some((n) => n.path.includes("fixtures"))).toBe(false);
+  });
+
   it("scans a basic Next.js app router project", async () => {
     writeFile(tmpDir, "package.json", "{}");
     writeFile(tmpDir, "app/page.tsx", "export default function Page() { return null; }");

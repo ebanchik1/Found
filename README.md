@@ -145,12 +145,21 @@ Keep PRs scoped. The fastest way to make this worse is to turn it into five tool
 
 ## Development
 
+First-time setup:
+
 ```bash
 npm install
-npm test          # vitest unit tests (100+ tests)
+npm run build     # builds dist/ so the bin regression test runs
+npm test          # vitest unit tests (110+ tests)
 npm run eval      # synthetic eval against fixtures/
 npm run typecheck # tsc --noEmit
-npm run dev .     # run found against the current directory
+```
+
+Day-to-day:
+
+```bash
+npm run dev fixtures/next-app-basic   # dogfood against a bundled fixture
+npm run dev /path/to/your/project     # dogfood against any real JS/TS app
 ```
 
 The eval harness scores Found's output against `fixtures/*/ground-truth.json`. Aim for ≥80% correct-or-hedged-correct before shipping.
