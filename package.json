@@ -1,6 +1,6 @@
 {
   "name": "@ebanchik/found",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A plain-language map for vibe-coded apps. Tells you what you have, in English.",
   "type": "module",
   "bin": {
