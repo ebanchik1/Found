@@ -4,7 +4,7 @@
   "description": "A plain-language map for vibe-coded apps. Tells you what you have, in English.",
   "type": "module",
   "bin": {
-    "found": "./dist/cli.js"
+    "found-map": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

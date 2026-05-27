@@ -18,7 +18,7 @@ Or install globally:
 
 ```bash
 npm install -g found-map
-found .
+found-map .
 ```
 
 ## What it does
