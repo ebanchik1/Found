@@ -11,6 +11,7 @@ Open-source, MIT, contributions welcome. Focused tool, not a platform. See [Scop
 No install required:
 
 ```bash
+cd ~/path/to/your-app
 npx @ebanchik/found .
 ```
 
@@ -20,6 +21,8 @@ Or install globally:
 npm install -g @ebanchik/found
 found .
 ```
+
+Requires Node.js 18 or newer. First-time user? Read [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md) for a full walkthrough — prerequisites, what the output sections mean, common situations, and flags.
 
 ## What it does
 
