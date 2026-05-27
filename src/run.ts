@@ -27,8 +27,19 @@ export async function run(opts: RunOptions): Promise<RunResult> {
 
   const routes = detectRoutes(scanResult.nodes, scanResult.rootDir);
 
+  const routeTargets = new Set(
+    routes
+      .filter((r) => r.framework === "react-router")
+      .map((r) => r.path),
+  );
+  const promotedNodes = scanResult.nodes.map((n) =>
+    routeTargets.has(n.path) && n.kind !== "screen"
+      ? { ...n, kind: "screen" as const, userFacing: true }
+      : n,
+  );
+
   const describer = new ConventionDescriber();
-  const described = await describer.describe(scanResult.nodes, graph, routes);
+  const described = await describer.describe(promotedNodes, graph, routes);
 
   const map = buildFoundMap(
     { nodes: described, edges: graph.edges },

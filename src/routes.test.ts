@@ -133,6 +133,64 @@ describe("detectRoutes — React Router declarative", () => {
     expect(routes.every((r) => r.framework === "react-router")).toBe(true);
   });
 
+  it("binds <Route element={<Foo />}> to the file Foo is imported from", () => {
+    writeFile(
+      tmpDir,
+      "src/SchoolPage.jsx",
+      `export default function SchoolPage() { return <div/>; }`,
+    );
+    writeFile(
+      tmpDir,
+      "src/MethodologyPage.jsx",
+      `export default function MethodologyPage() { return <div/>; }`,
+    );
+    writeFile(
+      tmpDir,
+      "src/main.jsx",
+      `
+      import { BrowserRouter, Routes, Route } from "react-router-dom";
+      import App from "./App";
+      import SchoolPage from "./SchoolPage";
+      import MethodologyPage from "./MethodologyPage";
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/school/:slug" element={<SchoolPage />} />
+          <Route path="/methodology" element={<MethodologyPage />} />
+        </Routes>
+      </BrowserRouter>
+      `,
+    );
+    writeFile(tmpDir, "src/App.jsx", `export default function App() { return null; }`);
+
+    const nodes = [
+      node("src/main.jsx", "entrypoint"),
+      node("src/App.jsx", "unknown"),
+      node("src/SchoolPage.jsx", "unknown"),
+      node("src/MethodologyPage.jsx", "unknown"),
+    ];
+    const routes = detectRoutes(nodes, tmpDir);
+
+    const byPath = Object.fromEntries(routes.map((r) => [r.path, r.routePath]));
+    expect(byPath["src/App.jsx"]).toBe("/");
+    expect(byPath["src/SchoolPage.jsx"]).toBe("/school/:slug");
+    expect(byPath["src/MethodologyPage.jsx"]).toBe("/methodology");
+  });
+
+  it("falls back to declaring file when element component isn't imported", () => {
+    writeFile(
+      tmpDir,
+      "src/Routes.jsx",
+      `
+      import { Routes, Route } from "react-router-dom";
+      <Routes><Route path="/foo" element={<UndefinedThing />} /></Routes>
+      `,
+    );
+    const routes = detectRoutes([node("src/Routes.jsx", "unknown")], tmpDir);
+    expect(routes[0]?.path).toBe("src/Routes.jsx");
+    expect(routes[0]?.routePath).toBe("/foo");
+  });
+
   it("ignores wildcard '*' routes (catch-all 404s)", () => {
     writeFile(tmpDir, "src/App.tsx", `<Route path="*" element={<NotFound />} />`);
     const routes = detectRoutes([node("src/App.tsx", "entrypoint")], tmpDir);
