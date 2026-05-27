@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { realpathSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { run } from "./run.js";
 import { FoundError, wrapUnknown } from "./errors.js";
 
@@ -56,12 +58,17 @@ function renderError(err: FoundError, debug: boolean): string {
   return out;
 }
 
-const invokedDirectly =
-  import.meta.url === `file://${process.argv[1]}` ||
-  process.argv[1]?.endsWith("cli.ts") ||
-  process.argv[1]?.endsWith("cli.js");
+function isMainEntry(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    const entryUrl = pathToFileURL(realpathSync(process.argv[1])).href;
+    return entryUrl === import.meta.url;
+  } catch {
+    return false;
+  }
+}
 
-if (invokedDirectly) {
+if (isMainEntry()) {
   main(process.argv.slice(2)).then((code) => process.exit(code));
 }
 

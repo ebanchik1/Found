@@ -84,3 +84,39 @@ describe("cli", () => {
     expect(stdout).not.toContain("Your app is");
   });
 });
+
+import { execFileSync, spawnSync } from "node:child_process";
+import os from "node:os";
+
+describe("cli — bin entry point (regression: silent no-op via symlink)", () => {
+  let tmpDir: string;
+  let symlinkPath: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "found-bin-test-"));
+    fs.writeFileSync(path.join(tmpDir, "package.json"), "{}");
+    fs.mkdirSync(path.join(tmpDir, "app"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpDir, "app", "page.tsx"),
+      "export default function Page() { return null; }",
+    );
+    symlinkPath = path.join(tmpDir, "my-found-bin");
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("invoking the bin via a differently-named symlink still runs main()", () => {
+    const distCli = path.resolve(__dirname, "..", "dist", "cli.js");
+    if (!fs.existsSync(distCli)) {
+      console.warn("Skipping bin test: dist/cli.js not built. Run `npm run build` first.");
+      return;
+    }
+    fs.symlinkSync(distCli, symlinkPath);
+    fs.chmodSync(distCli, 0o755);
+    const result = spawnSync(symlinkPath, [tmpDir], { encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Your app is");
+  });
+});
