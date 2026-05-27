@@ -47,6 +47,17 @@ describe("scan", () => {
     await expect(scan(tmpDir)).rejects.toBeInstanceOf(MonorepoDetected);
   });
 
+  it("excludes public/ and static/ from scan", async () => {
+    writeFile(tmpDir, "package.json", "{}");
+    writeFile(tmpDir, "app/page.tsx", "export default function Page() { return null; }");
+    writeFile(tmpDir, "public/js/app.js", "// static-served bundle");
+    writeFile(tmpDir, "static/widget.js", "// also static");
+
+    const result = await scan(tmpDir);
+    expect(result.nodes.some((n) => n.path.includes("public/"))).toBe(false);
+    expect(result.nodes.some((n) => n.path.includes("static/"))).toBe(false);
+  });
+
   it("does NOT trigger monorepo detection on fixtures/, __fixtures__/, __mocks__/, examples/", async () => {
     writeFile(tmpDir, "package.json", "{}");
     writeFile(tmpDir, "app/page.tsx", "export default function Page() { return null; }");

@@ -37,6 +37,8 @@ const ENTRYPOINT_PATTERNS = [
   /(^|\/)src\/App\.(t|j)sx?$/,
   /(^|\/)pages\/_app\.(t|j)sx?$/,
   /(^|\/)pages\/_document\.(t|j)sx?$/,
+  /^server\.(t|j)sx?$/,
+  /^src\/server\.(t|j)sx?$/,
 ];
 
 const NEXT_APP_SCREEN = /(^|\/)app\/.*\/page\.(t|j)sx?$/;

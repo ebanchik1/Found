@@ -103,6 +103,12 @@ describe("classifyFromConventions", () => {
     expect(classifyFromConventions("types/global.d.ts").kind).toBe("config");
   });
 
+  it("classifies root server.js / server.ts as entrypoint", () => {
+    expect(classifyFromConventions("server.js").kind).toBe("entrypoint");
+    expect(classifyFromConventions("server.ts").kind).toBe("entrypoint");
+    expect(classifyFromConventions("src/server.ts").kind).toBe("entrypoint");
+  });
+
   it("handles Windows backslash paths", () => {
     expect(classifyFromConventions("src\\components\\Button.tsx").kind).toBe("component");
     expect(classifyFromConventions("app\\login\\page.tsx").kind).toBe("screen");

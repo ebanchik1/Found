@@ -83,6 +83,24 @@ describe("cli", () => {
     expect(stdout).toContain('"version": "0.1"');
     expect(stdout).not.toContain("Your app is");
   });
+
+  it("promotes App.tsx to a screen when project is a no-router SPA", async () => {
+    writeFile(tmpDir, "package.json", "{}");
+    writeFile(
+      tmpDir,
+      "src/main.tsx",
+      `import App from "./App"; export default App;`,
+    );
+    writeFile(
+      tmpDir,
+      "src/App.tsx",
+      `export default function App() { return <div>Single-page app</div>; }`,
+    );
+    const code = await main([tmpDir]);
+    expect(code).toBe(0);
+    expect(stdout).toContain("1 screen");
+    expect(stdout).not.toContain("didn't see any screens");
+  });
 });
 
 import { execFileSync, spawnSync } from "node:child_process";

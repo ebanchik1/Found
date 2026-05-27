@@ -24,6 +24,8 @@ const ALWAYS_IGNORE = [
   "__mocks__/**",
   "examples/**",
   "example/**",
+  "public/**",
+  "static/**",
 ];
 
 const CONFIG_PATTERNS = [
