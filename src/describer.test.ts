@@ -73,12 +73,12 @@ describe("ConventionDescriber", () => {
     expect(out[0]?.does).toContain("3 other files");
   });
 
-  it("labels unused helpers honestly", async () => {
+  it("labels unused helpers honestly (might be unused)", async () => {
     const nodes: ScannedNode[] = [
       { path: "src/lib/orphan.ts", kind: "helper", userFacing: false },
     ];
     const out = await describer.describe(nodes, makeGraph(), []);
-    expect(out[0]?.does).toMatch(/closer look|exactly what/);
+    expect(out[0]?.does).toMatch(/might be unused|imports this/);
   });
 
   it("labels unknown low-confidence files with hedge text", async () => {
@@ -116,5 +116,35 @@ describe("ConventionDescriber", () => {
     ];
     const out = await describer.describe(nodes, makeGraph(), []);
     expect(out[0]?.name).toContain("useAuth");
+  });
+
+  it("labels scripts/* as maintenance scripts, not generic helpers", async () => {
+    const nodes: ScannedNode[] = [
+      { path: "scripts/check-cards.mjs", kind: "helper", userFacing: false },
+    ];
+    const out = await describer.describe(nodes, makeGraph(), []);
+    expect(out[0]?.name).toContain("maintenance script");
+    expect(out[0]?.does).toContain("command line");
+  });
+
+  it("labels src/data/* as data files", async () => {
+    const nodes: ScannedNode[] = [
+      { path: "src/data/cards.ts", kind: "helper", userFacing: false },
+    ];
+    const out = await describer.describe(
+      nodes,
+      makeGraph({ fanIn: new Map([["src/data/cards.ts", 8]]) }),
+      [],
+    );
+    expect(out[0]?.name).toContain("data file");
+    expect(out[0]?.does).toContain("8 other files");
+  });
+
+  it("labels src/state/* as app state", async () => {
+    const nodes: ScannedNode[] = [
+      { path: "src/state/walletStore.tsx", kind: "helper", userFacing: false },
+    ];
+    const out = await describer.describe(nodes, makeGraph(), []);
+    expect(out[0]?.name).toContain("App state");
   });
 });

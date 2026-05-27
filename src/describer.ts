@@ -85,14 +85,34 @@ function labelComponent(filePath: string, fanIn: number): { name: string; does: 
 }
 
 function labelHelper(filePath: string, fanIn: number): { name: string; does: string } {
+  const p = filePath.replace(/\\/g, "/");
   const base = basenameNoExt(filePath);
   const isHook = /^use[A-Z]/.test(base);
-  const name = isHook
-    ? `A behavior helper called ${base}`
-    : `A shared helper — \`${base}\``;
+  const isScript = /^scripts\//.test(p);
+  const isData = /(^|\/)(src\/)?data\//.test(p);
+  const isState = /(^|\/)(src\/)?(state|store|stores)\//.test(p);
+
+  let name: string;
+  if (isScript) {
+    name = `A maintenance script — \`${base}\``;
+  } else if (isData) {
+    name = `A data file — \`${base}\``;
+  } else if (isState) {
+    name = `App state — \`${base}\``;
+  } else if (isHook) {
+    name = `A behavior helper called ${base}`;
+  } else {
+    name = `A shared helper — \`${base}\``;
+  }
+
   let does: string;
-  if (fanIn === 0) {
-    does = "Used somewhere in the project. I can't tell exactly what it does without a closer look.";
+  if (isScript) {
+    does =
+      fanIn === 0
+        ? "A standalone script. Not imported by the app — run it from the command line."
+        : `A script run from the command line. Used by ${fanIn === 1 ? "1 other file" : `${fanIn} other files`}.`;
+  } else if (fanIn === 0) {
+    does = "Nothing else in the project imports this. It might be unused, or it might be loaded dynamically.";
   } else {
     const usedBy = fanIn === 1 ? "1 other file" : `${fanIn} other files`;
     does = `Used by ${usedBy}. I can't tell exactly what it does without a closer look.`;

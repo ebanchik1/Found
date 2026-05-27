@@ -22,6 +22,7 @@ const CONFIG_PATTERNS = [
   /(^|\/)eslint\.config\.(js|ts|mjs)$/,
   /(^|\/)\.eslintrc(\..+)?$/,
   /(^|\/)\.prettierrc(\..+)?$/,
+  /\.d\.ts$/,
 ];
 
 const TEST_PATTERNS = [
@@ -45,13 +46,17 @@ const NEXT_APP_LAYOUT = /(^|\/)app\/(.*\/)?(layout|template|error|not-found|load
 
 const NEXT_PAGES_SCREEN = /(^|\/)pages\/(?!_app|_document|api\/).*\.(t|j)sx?$/;
 const NEXT_PAGES_ENDPOINT = /(^|\/)pages\/api\/.*\.(t|j)sx?$/;
+const VERCEL_ROOT_API = /^api\/.*\.(t|j)sx?$/;
 
 const COMPONENT_DIR = /(^|\/)(src\/)?components\//;
 const LIB_DIR = /(^|\/)(src\/)?lib\//;
 const UTILS_DIR = /(^|\/)(src\/)?utils\//;
 const HOOKS_DIR = /(^|\/)(src\/)?hooks\//;
 const SERVICES_DIR = /(^|\/)(src\/)?services\//;
+const DATA_DIR = /(^|\/)(src\/)?data\//;
+const STATE_DIR = /(^|\/)(src\/)?(state|store|stores)\//;
 const SCREENS_DIR = /(^|\/)(src\/)?(screens|views|routes)\//;
+const SCRIPTS_DIR = /^scripts\//;
 
 export function classifyFromConventions(filePath: string): ClassifyResult {
   const p = toPosix(filePath);
@@ -72,7 +77,7 @@ export function classifyFromConventions(filePath: string): ClassifyResult {
     return { kind: "screen", userFacing: true, confidence: 0.9 };
   }
 
-  if (NEXT_APP_ENDPOINT.test(p) || NEXT_PAGES_ENDPOINT.test(p)) {
+  if (NEXT_APP_ENDPOINT.test(p) || NEXT_PAGES_ENDPOINT.test(p) || VERCEL_ROOT_API.test(p)) {
     return { kind: "endpoint", userFacing: false, confidence: 0.9 };
   }
 
@@ -94,6 +99,14 @@ export function classifyFromConventions(filePath: string): ClassifyResult {
 
   if (LIB_DIR.test(p) || UTILS_DIR.test(p) || SERVICES_DIR.test(p)) {
     return { kind: "helper", userFacing: false, confidence: 0.75 };
+  }
+
+  if (DATA_DIR.test(p) || STATE_DIR.test(p)) {
+    return { kind: "helper", userFacing: false, confidence: 0.8 };
+  }
+
+  if (SCRIPTS_DIR.test(p)) {
+    return { kind: "helper", userFacing: false, confidence: 0.85 };
   }
 
   if (HOOKS_DIR.test(p)) {

@@ -75,6 +75,34 @@ describe("classifyFromConventions", () => {
     expect(result.confidence).toBeLessThan(0.5);
   });
 
+  it("classifies Vercel-style root /api/*.tsx as endpoint", () => {
+    expect(classifyFromConventions("api/og.tsx").kind).toBe("endpoint");
+    expect(classifyFromConventions("api/og.tsx").confidence).toBeGreaterThanOrEqual(0.8);
+    expect(classifyFromConventions("api/hello.ts").kind).toBe("endpoint");
+  });
+
+  it("classifies src/data/ as helper (data convention)", () => {
+    expect(classifyFromConventions("src/data/cards.ts").kind).toBe("helper");
+    expect(classifyFromConventions("data/products.ts").kind).toBe("helper");
+  });
+
+  it("classifies src/state/ and src/store/ as helper (state convention)", () => {
+    expect(classifyFromConventions("src/state/walletStore.tsx").kind).toBe("helper");
+    expect(classifyFromConventions("src/store/counter.ts").kind).toBe("helper");
+    expect(classifyFromConventions("src/stores/auth.ts").kind).toBe("helper");
+  });
+
+  it("classifies root scripts/ as helper with high confidence", () => {
+    const result = classifyFromConventions("scripts/check-cards.mjs");
+    expect(result.kind).toBe("helper");
+    expect(result.confidence).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it("classifies .d.ts declaration files as config", () => {
+    expect(classifyFromConventions("src/vite-env.d.ts").kind).toBe("config");
+    expect(classifyFromConventions("types/global.d.ts").kind).toBe("config");
+  });
+
   it("handles Windows backslash paths", () => {
     expect(classifyFromConventions("src\\components\\Button.tsx").kind).toBe("component");
     expect(classifyFromConventions("app\\login\\page.tsx").kind).toBe("screen");
