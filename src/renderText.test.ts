@@ -171,4 +171,50 @@ describe("renderText", () => {
     const out = renderText(map, { showAll: false, terminalWidth: 100, parserUsed: "babel-fallback" }, makeGraph());
     expect(out).toContain("simpler parser");
   });
+
+  it("renders WHAT THIS APP IS BUILT ON section when builtOn is present", () => {
+    const map: FoundMap = {
+      ...makeMap([
+        makeNode({ path: "app/page.tsx", kind: "screen", userFacing: true, name: "The home screen", does: "..." }),
+      ]),
+      builtOn: {
+        tags: [
+          { id: "react", category: "frontend", label: "React", source: "package", confidence: 0.95, detectedIn: [] },
+          { id: "tailwind", category: "styling", label: "Tailwind CSS", source: "package", confidence: 0.95, detectedIn: [] },
+          { id: "anthropic-sdk", category: "ai", label: "Anthropic Claude SDK", source: "package", confidence: 0.95, detectedIn: [] },
+        ],
+        summary: "A React app styled with Tailwind. The chat uses Anthropic Claude.",
+      },
+    };
+    const out = renderText(map, { showAll: false, terminalWidth: 100, parserUsed: "dependency-cruiser" }, makeGraph());
+    expect(out).toContain("WHAT THIS APP IS BUILT ON");
+    expect(out).toContain("React");
+    expect(out).toContain("Tailwind CSS");
+    expect(out).toContain("Anthropic Claude");
+    expect(out).toContain("A React app styled with Tailwind");
+  });
+
+  it("groups built-on tags by category", () => {
+    const map: FoundMap = {
+      ...makeMap([
+        makeNode({ path: "app/page.tsx", kind: "screen", userFacing: true, name: "The home screen", does: "..." }),
+      ]),
+      builtOn: {
+        tags: [
+          { id: "react", category: "frontend", label: "React", source: "package", confidence: 0.95, detectedIn: [] },
+          { id: "vite", category: "frontend", label: "Vite", source: "package", confidence: 0.95, detectedIn: [] },
+        ],
+      },
+    };
+    const out = renderText(map, { showAll: false, terminalWidth: 100, parserUsed: "dependency-cruiser" }, makeGraph());
+    expect(out).toMatch(/Frontend:\s*React, Vite/);
+  });
+
+  it("omits BUILT ON section when builtOn is undefined", () => {
+    const map = makeMap([
+      makeNode({ path: "app/page.tsx", kind: "screen", userFacing: true, name: "The home screen", does: "..." }),
+    ]);
+    const out = renderText(map, { showAll: false, terminalWidth: 100, parserUsed: "dependency-cruiser" }, makeGraph());
+    expect(out).not.toContain("WHAT THIS APP IS BUILT ON");
+  });
 });

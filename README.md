@@ -42,18 +42,32 @@ Skip the LLM step anytime with `--no-llm`.
 Point it at a project folder. It prints a map like:
 
 ```
-Your app is 4 screens and 2 helpers. That's all of it.
+WHAT THIS APP IS BUILT ON
+
+  A React chat app built with Vite and styled with Tailwind CSS. Conversations are powered
+  by Anthropic's Claude API with streaming responses. The backend runs on Express and is
+  deployed to Vercel.
+
+  Language:    TypeScript
+  Frontend:    React, React hooks, Vite
+  Styling:     Tailwind CSS, Radix UI, Lucide icons
+  AI:          Anthropic Claude SDK, Streaming LLM responses
+  Backend:     Express
+  Deployment:  Vercel
+
+Your app is 1 screen, 2 endpoints, 5 components, and 2 helpers. That's all of it.
 
 SCREENS PEOPLE SEE
-  The home screen        A screen at /. Probably where people land when they open the app.
-                         app/page.tsx
-  The login screen       A screen at /login. Probably where people sign in.
-                         app/login/page.tsx
-  ...
+  The main app screen  Displays the chat interface where users select a philosopher and chat.
+                       src/App.tsx
+
+API ENDPOINTS
+  The chat endpoint    Receives messages and returns Claude's responses for the selected philosopher.
+                       api/chat.js
 
 BEHIND THE SCENES (you've never had to open these)
-  A shared helper — `db`     Used by 3 other files. I can't tell exactly what it does without a closer look.
-                             src/lib/db.ts
+  The list of philosophers   Stores the names and details of the philosophers available to chat with.
+                             philosophers.js
 ```
 
 That's the whole product.
@@ -147,7 +161,8 @@ The schema is additive between minor versions. v0.2a adds `confidenceSource: "mo
 ## Roadmap
 
 - **v0.1** — Static map. Deterministic labels. Shipped.
-- **v0.2a** — Optional LLM-enriched labels via a single batched cheap-model call. `confidenceSource: "model"`. **Shipped.**
+- **v0.2a** — Optional LLM-enriched labels via a single batched cheap-model call. `confidenceSource: "model"`. Shipped.
+- **v0.2.1** — New `WHAT THIS APP IS BUILT ON` section with detected technologies and patterns (React, hooks, Tailwind, Anthropic SDK, streaming, RAG, etc.). Detection runs locally; LLM only sees the resulting tag list, never your source. **Shipped.**
 - **v0.2b** — `--change "..."` for blast-radius queries: "I want to change the login flow → touch these files, avoid these, likely symptom if it breaks."
 - **Beyond** — watch mode, "what just happened" diff narration, explain-on-demand. Not promised, listed for orientation.
 

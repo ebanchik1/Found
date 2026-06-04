@@ -3,9 +3,10 @@ import { buildGraph } from "./graph.js";
 import { detectRoutes } from "./routes.js";
 import { ConventionDescriber } from "./describer.js";
 import { LLMDescriber } from "./llm-describer.js";
+import { detectConcepts } from "./concepts.js";
 import { buildFoundMap, renderJson } from "./renderJson.js";
 import { renderText, renderConfigSummary } from "./renderText.js";
-import type { Describer, RouteInfo, ScannedNode } from "./types.js";
+import type { BuiltOn, Describer, RouteInfo, ScannedNode } from "./types.js";
 
 export interface RunOptions {
   rootDir: string;
@@ -52,6 +53,11 @@ export async function run(opts: RunOptions): Promise<RunResult> {
     return n;
   });
 
+  const concepts = detectConcepts(
+    scanResult.rootDir,
+    scanResult.nodes.map((n) => n.path),
+  );
+
   const wantsLLM = opts.useLLM !== false && !!opts.apiKey;
   const describer: Describer = wantsLLM
     ? new LLMDescriber({
@@ -60,14 +66,34 @@ export async function run(opts: RunOptions): Promise<RunResult> {
         ...(opts.model ? { model: opts.model } : {}),
       })
     : new ConventionDescriber();
-  const described = await describer.describe(promotedNodes, graph, routes);
+  const describeResult = await describer.describe({
+    nodes: promotedNodes,
+    graph,
+    routes,
+    builtOnTags: concepts.tags.map((t) => ({
+      id: t.id,
+      category: t.category,
+      label: t.label,
+    })),
+  });
+  const described = describeResult.nodes;
   const describerUsed: "convention" | "model" =
     wantsLLM && described.some((d) => d.confidenceSource === "model")
       ? "model"
       : "convention";
 
+  const builtOn: BuiltOn | undefined =
+    concepts.tags.length > 0
+      ? {
+          tags: concepts.tags,
+          ...(describeResult.builtOnSummary
+            ? { summary: describeResult.builtOnSummary }
+            : {}),
+        }
+      : undefined;
+
   const map = buildFoundMap(
-    { nodes: described, edges: graph.edges },
+    { nodes: described, edges: graph.edges, builtOn },
     scanResult.configCount,
   );
 

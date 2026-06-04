@@ -1,5 +1,6 @@
 import {
   FoundMapSchema,
+  type BuiltOn,
   type DescribedNode,
   type Edge,
   type FoundMap,
@@ -9,6 +10,7 @@ import {
 export interface BuildMapInput {
   nodes: DescribedNode[];
   edges: Edge[];
+  builtOn?: BuiltOn | undefined;
 }
 
 export function buildFoundMap(input: BuildMapInput, configCount: number): FoundMap {
@@ -28,6 +30,7 @@ export function buildFoundMap(input: BuildMapInput, configCount: number): FoundM
     summary,
     nodes: input.nodes,
     edges: input.edges,
+    ...(input.builtOn ? { builtOn: input.builtOn } : {}),
   };
 
   return FoundMapSchema.parse(map);

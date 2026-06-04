@@ -12,6 +12,38 @@ export const NodeKindSchema = z.enum([
 ]);
 export type NodeKind = z.infer<typeof NodeKindSchema>;
 
+export const ConceptCategorySchema = z.enum([
+  "language",
+  "frontend",
+  "styling",
+  "ai",
+  "state",
+  "data",
+  "backend",
+  "database",
+  "auth",
+  "testing",
+  "deployment",
+  "tooling",
+  "other",
+]);
+
+export const ConceptTagSchema = z.object({
+  id: z.string(),
+  category: ConceptCategorySchema,
+  label: z.string(),
+  source: z.enum(["package", "pattern", "filesystem"]),
+  confidence: z.number().min(0).max(1),
+  detectedIn: z.array(z.string()),
+});
+
+export const BuiltOnSchema = z
+  .object({
+    tags: z.array(ConceptTagSchema),
+    summary: z.string().optional(),
+  })
+  .optional();
+
 export const ConfidenceSourceSchema = z.enum([
   "convention",
   "convention+graph",
@@ -54,8 +86,10 @@ export const FoundMapSchema = z.object({
   summary: SummarySchema,
   nodes: z.array(NodeSchema),
   edges: z.array(EdgeSchema),
+  builtOn: BuiltOnSchema,
 });
 export type FoundMap = z.infer<typeof FoundMapSchema>;
+export type BuiltOn = NonNullable<z.infer<typeof BuiltOnSchema>>;
 
 export interface ScannedNode {
   path: string;
@@ -78,6 +112,18 @@ export interface GraphData {
 
 export interface DescribedNode extends Node {}
 
+export interface DescribeResult {
+  nodes: DescribedNode[];
+  builtOnSummary?: string;
+}
+
+export interface DescribeContext {
+  nodes: ScannedNode[];
+  graph: GraphData;
+  routes: RouteInfo[];
+  builtOnTags?: Array<{ id: string; category: string; label: string }>;
+}
+
 export interface Describer {
-  describe(nodes: ScannedNode[], graph: GraphData, routes: RouteInfo[]): Promise<DescribedNode[]>;
+  describe(ctx: DescribeContext): Promise<DescribeResult>;
 }

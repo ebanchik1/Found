@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { ConventionDescriber } from "./describer.js";
-import type { GraphData, RouteInfo, ScannedNode } from "./types.js";
+import type { Describer, GraphData, RouteInfo, ScannedNode } from "./types.js";
+
+async function runDescribe(
+  d: Describer,
+  nodes: ScannedNode[],
+  graph: GraphData,
+  routes: RouteInfo[],
+) {
+  return (await d.describe({ nodes, graph, routes })).nodes;
+}
 
 function makeGraph(opts: Partial<GraphData> = {}): GraphData {
   return {
@@ -21,7 +30,7 @@ describe("ConventionDescriber", () => {
     const routes: RouteInfo[] = [
       { path: "app/page.tsx", routePath: "/", framework: "next-app" },
     ];
-    const out = await describer.describe(nodes, makeGraph(), routes);
+    const out = await runDescribe(describer, nodes, makeGraph(), routes);
     expect(out[0]?.name).toBe("The home screen");
   });
 
@@ -32,7 +41,7 @@ describe("ConventionDescriber", () => {
     const routes: RouteInfo[] = [
       { path: "app/login/page.tsx", routePath: "/login", framework: "next-app" },
     ];
-    const out = await describer.describe(nodes, makeGraph(), routes);
+    const out = await runDescribe(describer, nodes, makeGraph(), routes);
     expect(out[0]?.name).toBe("The login screen");
     expect(out[0]?.does).toContain("sign in");
   });
@@ -48,7 +57,7 @@ describe("ConventionDescriber", () => {
         framework: "next-app",
       },
     ];
-    const out = await describer.describe(nodes, makeGraph(), routes);
+    const out = await runDescribe(describer, nodes, makeGraph(), routes);
     expect(out[0]?.name).toBe("The user details screen");
   });
 
@@ -56,7 +65,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "app/api/users/route.ts", kind: "endpoint", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.name).toContain("API endpoint");
     expect(out[0]?.name).toContain("/users");
   });
@@ -65,7 +74,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/lib/db.ts", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       nodes,
       makeGraph({ fanIn: new Map([["src/lib/db.ts", 3]]) }),
       [],
@@ -77,7 +86,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/lib/orphan.ts", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.does).toMatch(/might be unused|imports this/);
   });
 
@@ -85,7 +94,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "weird-thing.ts", kind: "unknown", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.does).toMatch(/can't tell|couldn't figure/);
     expect(out[0]?.confidence).toBeLessThan(0.5);
   });
@@ -94,7 +103,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/lib/db.ts", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       nodes,
       makeGraph({ fanIn: new Map([["src/lib/db.ts", 2]]) }),
       [],
@@ -106,7 +115,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "package.json", kind: "config", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.confidenceSource).toBe("convention");
   });
 
@@ -114,7 +123,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/hooks/useAuth.ts", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.name).toContain("useAuth");
   });
 
@@ -122,7 +131,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "scripts/check-cards.mjs", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.name).toContain("maintenance script");
     expect(out[0]?.does).toContain("command line");
   });
@@ -131,7 +140,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/data/cards.ts", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       nodes,
       makeGraph({ fanIn: new Map([["src/data/cards.ts", 8]]) }),
       [],
@@ -144,7 +153,7 @@ describe("ConventionDescriber", () => {
     const nodes: ScannedNode[] = [
       { path: "src/state/walletStore.tsx", kind: "helper", userFacing: false },
     ];
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.name).toContain("App state");
   });
 });

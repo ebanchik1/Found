@@ -3,6 +3,8 @@ import { z } from "zod";
 import path from "node:path";
 import type {
   Describer,
+  DescribeContext,
+  DescribeResult,
   DescribedNode,
   GraphData,
   RouteInfo,
@@ -29,11 +31,12 @@ const LLMLabelSchema = z.object({
 });
 const LLMResponseSchema = z.object({
   labels: z.array(LLMLabelSchema),
+  builtOnSummary: z.string().optional(),
 });
 
 const SYSTEM_PROMPT = `You label the parts of a JavaScript or TypeScript project so the non-technical person who built it (often with an AI tool like Lovable, Bolt, or v0) can understand what they have.
 
-You receive a STRUCTURED description only: file paths, what each file exports (names only, no source), what imports what, route info, and a deterministic kind hint per file. You NEVER see the source code itself. Label only from the structure.
+You receive a STRUCTURED description only: file paths, what each file exports (names only, no source), what imports what, route info, a deterministic kind hint per file, and a list of detected technologies and patterns. You NEVER see the source code itself. Label only from the structure.
 
 For each file, produce:
 - "name": a plain-language label of what this is TO A USER. Not technical role.
@@ -47,6 +50,11 @@ For each file, produce:
   - 0.5 to 0.8: educated guess; hedge in the does sentence ("Probably where...").
   - Below 0.5: REFUSE to guess. Use "I can't tell what this does without a closer look." Lower confidence forces honest hedging in the renderer.
 
+Also produce ONE "builtOnSummary": 2-3 short sentences in plain English describing what the app is built on AT A HIGH LEVEL. Mention the headline technologies and patterns (frontend framework, AI APIs and how they're used, key databases, distinctive patterns). For a non-technical audience. Skip pieces that are not interesting (typescript, vite as build tool, etc.) — focus on the recognizable, distinguishing technologies.
+
+Good builtOnSummary: "A React app built with Vite, styled with Tailwind and shadcn/ui. The chat feature uses Anthropic's Claude API with streaming responses. Data lives in Supabase Postgres."
+Bad builtOnSummary: "This project uses several modern web technologies including React, TypeScript, Vite, and various other tools to provide a rich frontend experience."
+
 Hard rules:
 - Never invent. If the evidence is thin, lower the confidence and say so.
 - Never use technical jargon in user-facing names. Refuse phrases like "component", "module", "utility" unless the file is clearly internal (helpers).
@@ -59,7 +67,8 @@ Schema:
 {
   "labels": [
     { "path": "<exact path from input>", "name": "...", "does": "...", "confidence": 0.85 }
-  ]
+  ],
+  "builtOnSummary": "2-3 sentences..."
 }
 
 Return one label entry per node, in the same order as the input. Do not skip any.`;
@@ -109,15 +118,32 @@ function buildNodeContexts(
   });
 }
 
-function formatPrompt(rootDir: string, contexts: NodeContext[]): string {
+function formatPrompt(
+  rootDir: string,
+  contexts: NodeContext[],
+  builtOnTags: Array<{ id: string; category: string; label: string }> | undefined,
+): string {
   const projectName = path.basename(rootDir);
   const lines: string[] = [
     `PROJECT: ${projectName}`,
     `FILE COUNT: ${contexts.length}`,
     "",
-    "NODES:",
   ];
 
+  if (builtOnTags && builtOnTags.length > 0) {
+    lines.push("DETECTED TECHNOLOGIES AND PATTERNS:");
+    const byCategory = new Map<string, string[]>();
+    for (const t of builtOnTags) {
+      if (!byCategory.has(t.category)) byCategory.set(t.category, []);
+      byCategory.get(t.category)!.push(t.label);
+    }
+    for (const [category, labels] of byCategory) {
+      lines.push(`  ${category}: ${labels.join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("NODES:");
   for (const c of contexts) {
     lines.push(`- path: ${c.path}`);
     lines.push(`  kind: ${c.kind}`);
@@ -142,7 +168,7 @@ function formatPrompt(rootDir: string, contexts: NodeContext[]): string {
   }
 
   lines.push(
-    "Return JSON with one label per node in the same order. STRICT JSON only.",
+    "Return JSON with one label per node in the same order, plus a builtOnSummary string. STRICT JSON only.",
   );
   return lines.join("\n");
 }
@@ -173,17 +199,13 @@ export class LLMDescriber implements Describer {
     this.fallback = new ConventionDescriber();
   }
 
-  async describe(
-    nodes: ScannedNode[],
-    graph: GraphData,
-    routes: RouteInfo[],
-  ): Promise<DescribedNode[]> {
+  async describe(ctx: DescribeContext): Promise<DescribeResult> {
     const exportsMap = extractAllExports(
       this.rootDir,
-      nodes.map((n) => n.path),
+      ctx.nodes.map((n) => n.path),
     );
-    const contexts = buildNodeContexts(nodes, graph, routes, exportsMap);
-    const userPrompt = formatPrompt(this.rootDir, contexts);
+    const contexts = buildNodeContexts(ctx.nodes, ctx.graph, ctx.routes, exportsMap);
+    const userPrompt = formatPrompt(this.rootDir, contexts, ctx.builtOnTags);
 
     let response;
     try {
@@ -205,7 +227,7 @@ export class LLMDescriber implements Describer {
           err instanceof Error ? err.message : "unknown error"
         }). Falling back to plain-language labels without the model.\n\n`,
       );
-      return this.fallback.describe(nodes, graph, routes);
+      return this.fallback.describe(ctx);
     }
 
     const rawText = response.content
@@ -221,13 +243,13 @@ export class LLMDescriber implements Describer {
       process.stderr.write(
         `\nFound's LLM returned unparseable output. Falling back to plain-language labels without the model.\n\n`,
       );
-      return this.fallback.describe(nodes, graph, routes);
+      return this.fallback.describe(ctx);
     }
 
     const llmByPath = new Map(parsed.labels.map((l) => [l.path, l]));
-    const fallbackResults = await this.fallback.describe(nodes, graph, routes);
+    const fallbackResult = await this.fallback.describe(ctx);
 
-    return fallbackResults.map((fallbackNode) => {
+    const nodes: DescribedNode[] = fallbackResult.nodes.map((fallbackNode) => {
       const llm = llmByPath.get(fallbackNode.path);
       if (!llm) return fallbackNode;
       return {
@@ -238,6 +260,12 @@ export class LLMDescriber implements Describer {
         confidenceSource: "model",
       };
     });
+
+    const result: DescribeResult = { nodes };
+    if (parsed.builtOnSummary) {
+      result.builtOnSummary = parsed.builtOnSummary;
+    }
+    return result;
   }
 }
 

@@ -6,6 +6,8 @@ import {
 } from "./classify.js";
 import type {
   Describer,
+  DescribeContext,
+  DescribeResult,
   DescribedNode,
   GraphData,
   NodeKind,
@@ -216,14 +218,11 @@ function describeOne(
 }
 
 export class ConventionDescriber implements Describer {
-  async describe(
-    nodes: ScannedNode[],
-    graph: GraphData,
-    routes: RouteInfo[],
-  ): Promise<DescribedNode[]> {
-    return nodes.map((node) => {
+  async describe(ctx: DescribeContext): Promise<DescribeResult> {
+    const nodes = ctx.nodes.map((node) => {
       const base = classifyFromConventions(node.path);
-      return describeOne(node, base.confidence, graph, routes);
+      return describeOne(node, base.confidence, ctx.graph, ctx.routes);
     });
+    return { nodes };
   }
 }

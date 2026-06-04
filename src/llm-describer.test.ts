@@ -3,7 +3,16 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { LLMDescriber, type AnthropicLike } from "./llm-describer.js";
-import type { GraphData, RouteInfo, ScannedNode } from "./types.js";
+import type { Describer, GraphData, RouteInfo, ScannedNode } from "./types.js";
+
+async function runDescribe(
+  d: Describer,
+  nodes: ScannedNode[],
+  graph: GraphData,
+  routes: RouteInfo[],
+) {
+  return (await d.describe({ nodes, graph, routes })).nodes;
+}
 
 function mockClient(textBlocks: string[]): AnthropicLike {
   return {
@@ -73,7 +82,7 @@ describe("LLMDescriber", () => {
       { path: "src/login.ts", kind: "screen", userFacing: true },
     ];
 
-    const out = await describer.describe(nodes, makeGraph(), []);
+    const out = await runDescribe(describer, nodes, makeGraph(), []);
     expect(out[0]?.name).toBe("The login flow");
     expect(out[0]?.does).toContain("sign in");
     expect(out[0]?.confidence).toBeCloseTo(0.92, 2);
@@ -84,7 +93,7 @@ describe("LLMDescriber", () => {
     const stub = '```json\n{"labels":[{"path":"src/login.ts","name":"X","does":"Y","confidence":0.8}]}\n```';
     const client = mockClient([stub]);
     const describer = new LLMDescriber({ apiKey: "test", rootDir: tmp }, client);
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       [{ path: "src/login.ts", kind: "helper", userFacing: false }],
       makeGraph(),
       [],
@@ -95,7 +104,7 @@ describe("LLMDescriber", () => {
   it("falls back to convention labels when the API call throws", async () => {
     const client = failingClient(new Error("network down"));
     const describer = new LLMDescriber({ apiKey: "test", rootDir: tmp }, client);
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       [{ path: "src/login.ts", kind: "helper", userFacing: false }],
       makeGraph(),
       [],
@@ -107,7 +116,7 @@ describe("LLMDescriber", () => {
   it("falls back when the LLM returns malformed JSON", async () => {
     const client = mockClient(["this is not json at all, no braces here"]);
     const describer = new LLMDescriber({ apiKey: "test", rootDir: tmp }, client);
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       [{ path: "src/login.ts", kind: "helper", userFacing: false }],
       makeGraph(),
       [],
@@ -130,7 +139,7 @@ describe("LLMDescriber", () => {
     writeFile(tmp, "src/extra.ts", `export const extra = 1;`);
     const client = mockClient([stub]);
     const describer = new LLMDescriber({ apiKey: "test", rootDir: tmp }, client);
-    const out = await describer.describe(
+    const out = await runDescribe(describer, 
       [
         { path: "src/login.ts", kind: "helper", userFacing: false },
         { path: "src/extra.ts", kind: "helper", userFacing: false },

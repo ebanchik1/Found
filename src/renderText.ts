@@ -1,4 +1,4 @@
-import type { DescribedNode, FoundMap, GraphData, Summary } from "./types.js";
+import type { BuiltOn, DescribedNode, FoundMap, GraphData, Summary } from "./types.js";
 
 export interface RenderOptions {
   showAll: boolean;
@@ -125,6 +125,88 @@ function renderSection(section: RenderedSection): string {
   return lines.join("\n");
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  language: "Language",
+  frontend: "Frontend",
+  styling: "Styling",
+  ai: "AI",
+  state: "State management",
+  data: "Data fetching",
+  backend: "Backend",
+  database: "Database",
+  auth: "Auth",
+  testing: "Testing",
+  deployment: "Deployment",
+  tooling: "Tooling",
+  other: "Other",
+};
+
+const CATEGORY_ORDER = [
+  "language",
+  "frontend",
+  "styling",
+  "ai",
+  "state",
+  "data",
+  "backend",
+  "database",
+  "auth",
+  "deployment",
+  "testing",
+  "tooling",
+  "other",
+];
+
+export function renderBuiltOn(builtOn: BuiltOn | undefined): string {
+  if (!builtOn || builtOn.tags.length === 0) return "";
+  const lines: string[] = ["WHAT THIS APP IS BUILT ON"];
+  if (builtOn.summary) {
+    lines.push("");
+    lines.push("  " + wrapLines(builtOn.summary, 90, "  ").trimStart());
+  }
+
+  const grouped = new Map<string, string[]>();
+  for (const tag of builtOn.tags) {
+    if (!grouped.has(tag.category)) grouped.set(tag.category, []);
+    grouped.get(tag.category)!.push(tag.label);
+  }
+
+  const orderedCategories = CATEGORY_ORDER.filter((c) => grouped.has(c));
+  if (orderedCategories.length > 0) {
+    lines.push("");
+    const maxLabelLen = Math.max(
+      ...orderedCategories.map((c) => (CATEGORY_LABELS[c] ?? c).length),
+    );
+    for (const category of orderedCategories) {
+      const label = CATEGORY_LABELS[category] ?? category;
+      const padded = (label + ":").padEnd(maxLabelLen + 2);
+      const items = grouped.get(category)!.join(", ");
+      lines.push(`  ${padded}  ${items}`);
+    }
+  }
+
+  lines.push("");
+  return lines.join("\n");
+}
+
+function wrapLines(text: string, width: number, indent: string): string {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = indent;
+  for (const word of words) {
+    if (current.length + word.length + 1 > width && current.trim().length > 0) {
+      lines.push(current.trimEnd());
+      current = indent + word;
+    } else if (current === indent) {
+      current = indent + word;
+    } else {
+      current += " " + word;
+    }
+  }
+  if (current.trim().length > 0) lines.push(current.trimEnd());
+  return lines.join("\n");
+}
+
 export function renderText(map: FoundMap, opts: RenderOptions, graph: GraphData): string {
   const pathWidth = Math.max(20, Math.floor(opts.terminalWidth * 0.6));
   const screens = map.nodes.filter((n) => n.kind === "screen").sort(compareScreens);
@@ -136,6 +218,10 @@ export function renderText(map: FoundMap, opts: RenderOptions, graph: GraphData)
   const unknown = map.nodes.filter((n) => n.kind === "unknown").sort(alphabetical);
 
   const sections: string[] = [];
+  const builtOnText = renderBuiltOn(map.builtOn);
+  if (builtOnText) {
+    sections.push(builtOnText);
+  }
   sections.push(renderOpener(map.summary));
   sections.push("");
 
