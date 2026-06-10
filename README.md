@@ -1,3 +1,4 @@
+ ![Found — a plain-English map for vibe-coded apps](./cover.png)
 # Found — a plain-language map for vibe-coded apps
 
 > You built an app with AI. It works. But you open the folder a week later and have no idea what any of it is, what's safe to touch, or what happens if you break something. **Found reads your project and tells you what you have, in plain English.**
